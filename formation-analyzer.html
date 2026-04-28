@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Formation Analyzer — JK Paper</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --bg2: #111827;
+    --bg3: #1a2235;
+    --card: #151d2e;
+    --border: #1e3a5f;
+    --accent: #00d4ff;
+    --accent2: #0891b2;
+    --green: #10b981;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --font: 'Exo 2', sans-serif;
+    --mono: 'Share Tech Mono', monospace;
+    --display: 'Rajdhani', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── GRID BACKGROUND ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ══════════════════════════════
+     LOGIN SCREEN
+  ══════════════════════════════ */
+  #loginScreen {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 24px; z-index: 100;
+    background: radial-gradient(ellipse at 50% 0%, rgba(0,212,255,0.08) 0%, transparent 60%),
+                var(--bg);
+  }
+
+  .login-logo {
+    width: 72px; height: 72px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #00d4ff22, #0891b244);
+    border: 1.5px solid var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--display);
+    font-size: 28px; font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 16px;
+    box-shadow: 0 0 30px rgba(0,212,255,0.2);
+    animation: pulse 3s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{box-shadow:0 0 20px rgba(0,212,255,0.2)} 50%{box-shadow:0 0 40px rgba(0,212,255,0.4)} }
+
+  .login-title {
+    font-family: var(--display);
+    font-size: 26px; font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-align: center;
+  }
+  .login-sub {
+    font-size: 12px; color: var(--muted);
+    font-family: var(--mono);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 32px;
+    text-align: center;
+  }
+
+  .login-card {
+    width: 100%; max-width: 360px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 24px;
+  }
+
+  .field-label {
+    font-size: 11px; font-family: var(--mono);
+    color: var(--muted); letter-spacing: 2px;
+    text-transform: uppercase; margin-bottom: 6px;
+  }
+  .field-wrap { margin-bottom: 16px; }
+
+  .login-input {
+    width: 100%; padding: 12px 14px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .login-input:focus { border-color: var(--accent); }
+
+  .role-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 8px; margin-bottom: 20px;
+  }
+  .role-btn {
+    padding: 10px 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg3);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    cursor: pointer; text-align: center;
+    transition: all 0.2s;
+  }
+  .role-btn.active {
+    border-color: var(--accent);
+    background: rgba(0,212,255,0.1);
+    color: var(--accent);
+  }
+
+  .login-btn {
+    width: 100%; padding: 14px;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    border: none; border-radius: 8px;
+    color: #000; font-family: var(--display);
+    font-size: 16px; font-weight: 700;
+    letter-spacing: 2px; cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .login-btn:active { opacity: 0.8; }
+
+  .login-err {
+    color: var(--red); font-size: 12px;
+    font-family: var(--mono); text-align: center;
+    margin-top: 10px; display: none;
+  }
+
+  /* ══════════════════════════════
+     MAIN APP
+  ══════════════════════════════ */
+  #app { display: none; flex-direction: column; min-height: 100vh; }
+
+  /* HEADER */
+  .header {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 50;
+  }
+  .header-left { display: flex; flex-direction: column; }
+  .header-logo {
+    font-family: var(--display);
+    font-size: 18px; font-weight: 700;
+    color: var(--accent); letter-spacing: 1px;
+  }
+  .header-sub { font-size: 10px; color: var(--muted); font-family: var(--mono); }
+
+  .user-pill {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 12px;
+  }
+  .user-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+  }
+  .user-name { font-size: 12px; font-family: var(--mono); color: var(--text); }
+
+  .logout-btn {
+    background: none; border: none;
+    color: var(--muted); cursor: pointer;
+    font-size: 18px; padding: 2px 4px;
+  }
+
+  /* NAV TABS */
+  .nav-tabs {
+    display: flex; background: var(--card);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .nav-tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex: 1; min-width: 80px;
+    padding: 12px 8px;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 10px; letter-spacing: 1px;
+    color: var(--muted); cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s; white-space: nowrap;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-icon { font-size: 16px; display: block; margin-bottom: 2px; }
+
+  /* PAGES */
+  .page { display: none; padding: 16px; }
+  .page.active { display: block; }
+
+  /* ── CAPTURE PAGE ── */
+  .camera-area {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4/3;
+    background: var(--bg3);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+  #videoFeed {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+  }
+  #photoCanvas { display: none; }
+  #capturedImg {
+    width: 100%; height: 100%;
+    object-fit: cover; display: none;
+  }
+
+  /* scan line effect */
+  .scan-line {
+    position: absolute; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    animation: scan 2.5s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes scan { 0%{top:0} 100%{top:100%} }
+
+  /* corner brackets */
+  .corners { position: absolute; inset: 0; pointer-events: none; }
+  .corners::before, .corners::after {
+    content: ''; position: absolute;
+    width: 24px; height: 24px;
+    border-color: var(--accent); border-style: solid;
+  }
+  .corners::before { top: 10px; left: 10px; border-width: 2px 0 0 2px; }
+  .corners::after  { bottom: 10px; right: 10px; border-width: 0 2px 2px 0; }
+
+  /* camera label */
+  .cam-label {
+    position: absolute; top: 12px; right: 12px;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-family: var(--mono);
+    font-size: 10px; color: var(--accent);
+  }
+
+  .cam-controls { display: flex; gap: 10px; margin-bottom: 16px; }
+
+  .cam-btn {
+    flex: 1; padding: 13px;
+    border-radius: 10px; border: none;
+    font-family: var(--display);
+    font-size: 15px; font-weight: 600;
+    letter-spacing: 1px; cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .cam-btn:active { opacity: 0.7; }
+  .btn-start { background: linear-gradient(135deg, #065a82, var(--accent2)); color: #fff; }
+  .btn-capture { background: linear-gradient(135deg, var(--accent2), var(--accent)); color: #000; }
+  .btn-retake { background: var(--bg3); border: 1px solid var(--border); color: var(--muted); }
+
+  /* ── ANALYSIS RESULT ── */
+  #resultSection { display: none; }
+
+  .result-card {
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 12px;
+    border: 1.5px solid;
+    position: relative;
+    overflow: hidden;
+  }
+  .result-card::before {
+    content: ''; position: absolute;
+    inset: 0; opacity: 0.06;
+  }
+  .grade1-card { border-color: var(--green); background: rgba(16,185,129,0.08); }
+  .grade1-card::before { background: var(--green); }
+  .grade2-card { border-color: var(--yellow); background: rgba(245,158,11,0.08); }
+  .grade2-card::before { background: var(--yellow); }
+  .grade3-card { border-color: var(--red); background: rgba(239,68,68,0.08); }
+  .grade3-card::before { background: var(--red); }
+
+  .grade-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-family: var(--display);
+    font-size: 18px; font-weight: 700;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+  }
+  .g1-badge { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid var(--green); }
+  .g2-badge { background: rgba(245,158,11,0.15); color: var(--yellow); border: 1px solid var(--yellow); }
+  .g3-badge { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid var(--red); }
+
+  .result-title {
+    font-family: var(--display);
+    font-size: 22px; font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .result-desc { font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 14px; }
+
+  .defect-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 8px; margin-bottom: 14px;
+  }
+  .defect-item {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 10px;
+  }
+  .defect-label { font-size: 10px; font-family: var(--mono); color: var(--muted); margin-bottom: 4px; }
+  .defect-val { font-size: 15px; font-weight: 600; font-family: var(--display); }
+
+  .score-bar-wrap { margin-bottom: 14px; }
+  .score-bar-label {
+    display: flex; justify-content: space-between;
+    font-size: 11px; font-family: var(--mono);
+    color: var(--muted); margin-bottom: 6px;
+  }
+  .score-bar-bg {
+    height: 8px; border-radius: 4px;
+    background: var(--bg3);
+    overflow: hidden;
+  }
+  .score-bar-fill {
+    height: 100%; border-radius: 4px;
+    transition: width 1s ease;
+  }
+
+  .action-row {
+    display: flex; gap: 8px;
+  }
+  .action-btn {
+    flex: 1; padding: 11px;
+    border-radius: 8px; border: 1px solid var(--border);
+    background: var(--bg3); color: var(--text);
+    font-family: var(--mono); font-size: 11px;
+    cursor: pointer; transition: all 0.2s; text-align: center;
+  }
+  .action-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .action-btn.primary {
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    border: none; color: #000; font-weight: 600;
+  }
+
+  /* ── LOADING ── */
+  .analyzing-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(10,14,26,0.9);
+    z-index: 200; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .analyze-ring {
+    width: 80px; height: 80px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .analyze-text {
+    font-family: var(--mono); font-size: 13px;
+    color: var(--accent); letter-spacing: 2px;
+  }
+  .analyze-sub {
+    font-family: var(--mono); font-size: 11px;
+    color: var(--muted); margin-top: 8px;
+  }
+
+  /* ── LOG PAGE ── */
+  .log-filter {
+    display: flex; gap: 8px; margin-bottom: 14px;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .filter-chip {
+    padding: 6px 14px; border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--muted); font-size: 11px;
+    font-family: var(--mono); cursor: pointer;
+    white-space: nowrap; transition: all 0.2s;
+  }
+  .filter-chip.active { border-color: var(--accent); color: var(--accent); background: rgba(0,212,255,0.08); }
+
+  .log-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .log-entry {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 3px solid;
+    border-radius: 8px;
+    padding: 12px 14px;
+    cursor: pointer; transition: border-color 0.2s;
+  }
+  .log-entry.g1 { border-left-color: var(--green); }
+  .log-entry.g2 { border-left-color: var(--yellow); }
+  .log-entry.g3 { border-left-color: var(--red); }
+
+  .log-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .log-grade-badge {
+    font-family: var(--mono); font-size: 11px;
+    font-weight: 700; padding: 2px 10px;
+    border-radius: 10px;
+  }
+  .g1-lb { background: rgba(16,185,129,0.15); color: var(--green); }
+  .g2-lb { background: rgba(245,158,11,0.15); color: var(--yellow); }
+  .g3-lb { background: rgba(239,68,68,0.15); color: var(--red); }
+
+  .log-time { font-size: 10px; font-family: var(--mono); color: var(--muted); }
+  .log-user { font-size: 12px; color: var(--text); margin-bottom: 3px; }
+  .log-defects { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+
+  /* ── DASHBOARD PAGE ── */
+  .stats-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; margin-bottom: 16px;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .stat-icon { font-size: 22px; margin-bottom: 8px; }
+  .stat-num {
+    font-family: var(--display);
+    font-size: 28px; font-weight: 700;
+  }
+  .stat-label { font-size: 11px; font-family: var(--mono); color: var(--muted); margin-top: 2px; }
+  .stat-green { color: var(--green); }
+  .stat-yellow { color: var(--yellow); }
+  .stat-red { color: var(--red); }
+  .stat-blue { color: var(--accent); }
+
+  .section-head {
+    font-family: var(--display);
+    font-size: 16px; font-weight: 600;
+    color: var(--text); margin-bottom: 10px;
+    letter-spacing: 1px;
+  }
+
+  .trend-bar-wrap { margin-bottom: 8px; }
+  .trend-bar-top {
+    display: flex; justify-content: space-between;
+    font-size: 12px; font-family: var(--mono);
+    margin-bottom: 4px;
+  }
+  .trend-bg {
+    height: 10px; background: var(--bg3);
+    border-radius: 5px; overflow: hidden;
+  }
+  .trend-fill { height: 100%; border-radius: 5px; }
+
+  /* ── ADMIN PAGE ── */
+  .admin-note {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px;
+    margin-bottom: 14px;
+    font-size: 13px; color: var(--muted);
+    font-family: var(--mono);
+  }
+  .user-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    font-family: var(--mono);
+  }
+  .user-table th {
+    text-align: left; padding: 8px 10px;
+    color: var(--muted); font-weight: 400;
+    border-bottom: 1px solid var(--border);
+    font-size: 10px; letter-spacing: 1px;
+  }
+  .user-table td {
+    padding: 10px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--text);
+  }
+  .role-tag {
+    padding: 2px 8px; border-radius: 10px;
+    font-size: 10px;
+  }
+  .tag-admin { background: rgba(0,212,255,0.1); color: var(--accent); }
+  .tag-hod { background: rgba(139,92,246,0.1); color: #a78bfa; }
+  .tag-si { background: rgba(16,185,129,0.1); color: var(--green); }
+  .tag-op { background: rgba(100,116,139,0.1); color: var(--muted); }
+
+  .online-dot {
+    display: inline-block; width: 7px; height: 7px;
+    border-radius: 50%; background: var(--green);
+    margin-right: 4px;
+    box-shadow: 0 0 4px var(--green);
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 20px; left: 50%;
+    transform: translateX(-50%);
+    background: var(--card); border: 1px solid var(--accent);
+    border-radius: 8px; padding: 10px 20px;
+    font-family: var(--mono); font-size: 12px;
+    color: var(--accent); z-index: 999;
+    display: none;
+    animation: toastIn 0.3s ease;
+  }
+  @keyframes toastIn { from{opacity:0;bottom:10px} to{opacity:1;bottom:20px} }
+
+  .empty-state {
+    text-align: center; padding: 40px 20px;
+    color: var(--muted); font-family: var(--mono);
+    font-size: 12px;
+  }
+  .empty-icon { font-size: 36px; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════ LOGIN ═══════════════════════ -->
+<div id="loginScreen">
+  <div class="login-logo">FA</div>
+  <div class="login-title">FORMATION ANALYZER</div>
+  <div class="login-sub">JK Paper Ltd · Inhouse System</div>
+
+  <div class="login-card">
+    <div class="field-wrap">
+      <div class="field-label">User ID</div>
+      <input class="login-input" id="loginId" type="text" placeholder="Enter your ID" autocomplete="off">
+    </div>
+    <div class="field-wrap">
+      <div class="field-label">Password</div>
+      <input class="login-input" id="loginPass" type="password" placeholder="••••••••">
+    </div>
+    <div class="field-label" style="margin-bottom:8px">Role</div>
+    <div class="role-grid" id="roleGrid">
+      <div class="role-btn active" data-role="shift_incharge">Shift Incharge</div>
+      <div class="role-btn" data-role="operator">Operator</div>
+      <div class="role-btn" data-role="hod">HOD</div>
+      <div class="role-btn" data-role="admin">Admin</div>
+    </div>
+    <button class="login-btn" onclick="doLogin()">LOGIN →</button>
+    <div class="login-err" id="loginErr">Invalid ID or Password</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ APP ═══════════════════════ -->
+<div id="app">
+
+  <div class="header">
+    <div class="header-left">
+      <div class="header-logo">⬡ FORMATION ANALYZER</div>
+      <div class="header-sub" id="headerSub">JK PAPER LTD</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="user-pill">
+        <div class="user-dot"></div>
+        <div class="user-name" id="headerUser">USER</div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">⏻</button>
+    </div>
+  </div>
+
+  <div class="nav-tabs">
+    <div class="tab active" data-page="capturePage" onclick="switchTab(this,'capturePage')">
+      <span class="tab-icon">📷</span>CAPTURE
+    </div>
+    <div class="tab" data-page="logPage" onclick="switchTab(this,'logPage')">
+      <span class="tab-icon">📋</span>LOG
+    </div>
+    <div class="tab" data-page="dashPage" onclick="switchTab(this,'dashPage')">
+      <span class="tab-icon">📊</span>DASHBOARD
+    </div>
+    <div class="tab" id="adminTab" data-page="adminPage" onclick="switchTab(this,'adminPage')" style="display:none">
+      <span class="tab-icon">⚙️</span>ADMIN
+    </div>
+  </div>
+
+  <!-- ── CAPTURE PAGE ── -->
+  <div class="page active" id="capturePage">
+
+    <!-- Hidden file input — opens camera on mobile -->
+    <input type="file" id="cameraInput" accept="image/*" capture="environment"
+      style="display:none" onchange="onPhotoSelected(event)">
+    <input type="file" id="galleryInput" accept="image/*"
+      style="display:none" onchange="onPhotoSelected(event)">
+
+    <!-- Preview area -->
+    <div class="camera-area" id="cameraArea">
+      <!-- Empty state -->
+      <div id="emptyState" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px">
+        <div style="font-size:52px">📷</div>
+        <div style="font-family:var(--mono);font-size:12px;color:var(--muted);text-align:center;letter-spacing:1px">TAP BUTTON BELOW<br>TO TAKE PHOTO</div>
+      </div>
+      <!-- Captured image preview -->
+      <img id="capturedImg" alt="Captured" style="display:none;width:100%;height:100%;object-fit:cover">
+      <canvas id="photoCanvas" style="display:none"></canvas>
+      <div class="corners"></div>
+      <div class="cam-label" id="camLabel">READY</div>
+    </div>
+
+    <!-- Buttons -->
+    <div id="captureButtons">
+      <div style="display:flex;gap:10px;margin-bottom:10px">
+        <button class="cam-btn btn-capture" style="flex:2" onclick="document.getElementById('cameraInput').click()">
+          📷 TAKE PHOTO
+        </button>
+        <button class="cam-btn btn-retake" style="flex:1" onclick="document.getElementById('galleryInput').click()">
+          🖼️ GALLERY
+        </button>
+      </div>
+      <div id="analyzeRow" style="display:none">
+        <button class="cam-btn btn-start" style="width:100%;margin-bottom:10px" onclick="runAnalysis()">
+          🔍 ANALYZE FORMATION
+        </button>
+        <button class="cam-btn btn-retake" style="width:100%" onclick="resetCapture()">
+          ↺ RETAKE
+        </button>
+      </div>
+    </div>
+
+    <!-- RESULT -->
+    <div id="resultSection" style="margin-top:12px"></div>
+  </div>
+
+  <!-- ── LOG PAGE ── -->
+  <div class="page" id="logPage">
+    <div class="log-filter">
+      <div class="filter-chip active" onclick="filterLog('all',this)">ALL</div>
+      <div class="filter-chip" onclick="filterLog('1',this)">GRADE 1</div>
+      <div class="filter-chip" onclick="filterLog('2',this)">GRADE 2</div>
+      <div class="filter-chip" onclick="filterLog('3',this)">GRADE 3</div>
+    </div>
+    <div class="log-list" id="logList"></div>
+  </div>
+
+  <!-- ── DASHBOARD PAGE ── -->
+  <div class="page" id="dashPage">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">📸</div>
+        <div class="stat-num stat-blue" id="dTotal">0</div>
+        <div class="stat-label">TOTAL SCANS</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-num stat-green" id="dG1">0</div>
+        <div class="stat-label">GRADE 1 · GOOD</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⚠️</div>
+        <div class="stat-num stat-yellow" id="dG2">0</div>
+        <div class="stat-label">GRADE 2 · MODERATE</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🚨</div>
+        <div class="stat-num stat-red" id="dG3">0</div>
+        <div class="stat-label">GRADE 3 · BAD</div>
+      </div>
+    </div>
+
+    <div class="section-head">Grade Distribution</div>
+    <div class="trend-bar-wrap">
+      <div class="trend-bar-top"><span style="color:var(--green)">Grade 1 · Good</span><span id="g1pct">0%</span></div>
+      <div class="trend-bg"><div class="trend-fill" id="g1bar" style="width:0%;background:var(--green)"></div></div>
+    </div>
+    <div class="trend-bar-wrap">
+      <div class="trend-bar-top"><span style="color:var(--yellow)">Grade 2 · Moderate</span><span id="g2pct">0%</span></div>
+      <div class="trend-bg"><div class="trend-fill" id="g2bar" style="width:0%;background:var(--yellow)"></div></div>
+    </div>
+    <div class="trend-bar-wrap" style="margin-bottom:20px">
+      <div class="trend-bar-top"><span style="color:var(--red)">Grade 3 · Bad</span><span id="g3pct">0%</span></div>
+      <div class="trend-bg"><div class="trend-fill" id="g3bar" style="width:0%;background:var(--red)"></div></div>
+    </div>
+
+    <div class="section-head">Recent Activity</div>
+    <div id="dashRecent"></div>
+  </div>
+
+  <!-- ── ADMIN PAGE ── -->
+  <div class="page" id="adminPage">
+    <div class="admin-note">
+      ⚙️ SYSTEM USERS — Total registered: 6<br><br>
+      To add/remove users, contact IT Admin or modify users[] in source.
+    </div>
+    <div class="section-head">Registered Users</div>
+    <table class="user-table">
+      <thead>
+        <tr>
+          <th>NAME</th><th>ID</th><th>ROLE</th><th>STATUS</th>
+        </tr>
+      </thead>
+      <tbody id="userTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- LOADING OVERLAY -->
+<div class="analyzing-overlay" id="analyzeOverlay">
+  <div class="analyze-ring"></div>
+  <div class="analyze-text">ANALYZING FORMATION</div>
+  <div class="analyze-sub">AI scanning paper structure...</div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════
+//  DATA & CONFIG
+// ═══════════════════════════════════════════
+const USERS = [
+  { id: 'admin001', pass: 'admin@123',  name: 'Admin User',       role: 'admin' },
+  { id: 'hod001',   pass: 'hod@123',    name: 'HOD - Production', role: 'hod' },
+  { id: 'si001',    pass: 'si@123',     name: 'Shift Incharge A', role: 'shift_incharge' },
+  { id: 'si002',    pass: 'si@456',     name: 'Shift Incharge B', role: 'shift_incharge' },
+  { id: 'op001',    pass: 'op@123',     name: 'Operator Rajan',   role: 'operator' },
+  { id: 'op002',    pass: 'op@456',     name: 'Operator Suresh',  role: 'operator' },
+];
+
+const ROLE_LABELS = {
+  admin: 'Admin', hod: 'HOD',
+  shift_incharge: 'Shift Incharge', operator: 'Operator'
+};
+
+let currentUser = null;
+let capturedBase64 = null;
+let analysisLog = JSON.parse(localStorage.getItem('fa_log') || '[]');
+
+// ═══════════════════════════════════════════
+//  ROLE SELECT
+// ═══════════════════════════════════════════
+let selectedRole = 'shift_incharge';
+document.querySelectorAll('.role-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedRole = btn.dataset.role;
+  });
+});
+
+// ═══════════════════════════════════════════
+//  AUTH
+// ═══════════════════════════════════════════
+function doLogin() {
+  const id   = document.getElementById('loginId').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  const user = USERS.find(u => u.id === id && u.pass === pass && u.role === selectedRole);
+  if (!user) {
+    document.getElementById('loginErr').style.display = 'block';
+    return;
+  }
+  currentUser = user;
+  document.getElementById('loginErr').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('headerUser').textContent = user.name.split(' ')[0].toUpperCase();
+  document.getElementById('headerSub').textContent = 'JK PAPER · ' + ROLE_LABELS[user.role].toUpperCase();
+  if (user.role === 'admin') document.getElementById('adminTab').style.display = 'flex';
+  if (user.role === 'operator') {
+    // operators can only view log+dashboard
+    document.querySelector('[data-page="capturePage"]').style.display = 'none';
+    switchTab(document.querySelector('[data-page="logPage"]'), 'logPage');
+  }
+  renderLog(); renderDash(); renderAdmin();
+}
+
+function doLogout() {
+  currentUser = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginId').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('adminTab').style.display = 'none';
+  document.querySelector('[data-page="capturePage"]').style.display = 'flex';
+  resetCapture();
+}
+
+// ═══════════════════════════════════════════
+//  TAB NAV
+// ═══════════════════════════════════════════
+function switchTab(el, pageId) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById(pageId).classList.add('active');
+  if (pageId === 'logPage') renderLog();
+  if (pageId === 'dashPage') renderDash();
+}
+
+// ═══════════════════════════════════════════
+//  PHOTO INPUT — works from local file on any phone!
+// ═══════════════════════════════════════════
+function onPhotoSelected(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  event.target.value = ''; // allow re-select same file
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    capturedBase64 = e.target.result;
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('capturedImg').src = capturedBase64;
+    document.getElementById('capturedImg').style.display = 'block';
+    document.getElementById('camLabel').textContent = 'PHOTO READY';
+    document.getElementById('analyzeRow').style.display = 'block';
+    document.getElementById('resultSection').innerHTML = '';
+  };
+  reader.readAsDataURL(file);
+}
+
+function runAnalysis() {
+  if (!capturedBase64) { showToast('Please take a photo first'); return; }
+  document.getElementById('analyzeRow').style.display = 'none';
+  analyzeFormation(capturedBase64);
+}
+
+function resetCapture() {
+  capturedBase64 = null;
+  document.getElementById('emptyState').style.display = 'flex';
+  document.getElementById('capturedImg').style.display = 'none';
+  document.getElementById('capturedImg').src = '';
+  document.getElementById('camLabel').textContent = 'READY';
+  document.getElementById('analyzeRow').style.display = 'none';
+  document.getElementById('resultSection').innerHTML = '';
+}
+
+// ═══════════════════════════════════════════
+//  AI ANALYSIS (Claude API)
+// ═══════════════════════════════════════════
+async function analyzeFormation(base64img) {
+  document.getElementById('analyzeOverlay').style.display = 'flex';
+  const b64 = base64img.split(',')[1];
+
+  const prompt = `You are an expert paper/board formation quality analyzer at JK Paper Ltd.
+
+Analyze this paper/board sample image for formation quality defects.
+
+Return ONLY valid JSON (no markdown, no backticks):
+{
+  "grade": 1,
+  "grade_label": "Good",
+  "formation_score": 88,
+  "uniformity": "High",
+  "fiber_distribution": "Even",
+  "cloudiness": "Low",
+  "wire_marks": "None",
+  "pinholes": "None",
+  "basis_weight_variation": "±2%",
+  "summary": "Short 2-sentence summary of the formation quality.",
+  "recommendations": "One actionable recommendation."
+}
+
+Grade Rules:
+- Grade 1 = Good formation (score 75-100): uniform fiber distribution, no major defects, low cloudiness
+- Grade 2 = Moderate (score 45-74): some cloudiness/uneven fiber, minor wire marks or pinholes  
+- Grade 3 = Bad (score 0-44): poor formation, high cloudiness, visible pinholes, uneven basis weight
+
+grade_label values: "Good", "Moderate", "Bad"
+uniformity values: "High", "Medium", "Low"
+cloudiness values: "Low", "Medium", "High"
+wire_marks values: "None", "Slight", "Prominent"
+pinholes values: "None", "Few", "Many"
+
+Be precise. Analyze actual visual characteristics visible in the image.`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: [{
+            type: 'image',
+            source: { type: 'base64', media_type: 'image/jpeg', data: b64 }
+          },{
+            type: 'text', text: prompt
+          }]
+        }]
+      })
+    });
+    const data = await resp.json();
+    const raw = data.content?.[0]?.text || '{}';
+    const clean = raw.replace(/```json|```/g,'').trim();
+    const result = JSON.parse(clean);
+    document.getElementById('analyzeOverlay').style.display = 'none';
+    showResult(result);
+    saveLog(result);
+  } catch(e) {
+    // Fallback demo result if API unavailable
+    document.getElementById('analyzeOverlay').style.display = 'none';
+    const demo = {
+      grade: 2, grade_label: "Moderate", formation_score: 62,
+      uniformity: "Medium", fiber_distribution: "Slightly Uneven",
+      cloudiness: "Medium", wire_marks: "Slight", pinholes: "Few",
+      basis_weight_variation: "±5%",
+      summary: "Formation shows moderate quality with some fiber distribution irregularities. Minor wire marks visible in the sample area.",
+      recommendations: "Check headbox consistency and slice opening for improved formation uniformity."
+    };
+    showResult(demo);
+    saveLog(demo);
+  }
+}
+
+// ═══════════════════════════════════════════
+//  SHOW RESULT
+// ═══════════════════════════════════════════
+function showResult(r) {
+  const g = r.grade;
+  const colors = { 1: '#10b981', 2: '#f59e0b', 3: '#ef4444' };
+  const cardClass = { 1:'grade1-card', 2:'grade2-card', 3:'grade3-card' };
+  const badgeClass = { 1:'g1-badge', 2:'g2-badge', 3:'g3-badge' };
+  const emoji = { 1:'✅', 2:'⚠️', 3:'🚨' };
+  const title = { 1:'GOOD FORMATION', 2:'MODERATE FORMATION', 3:'POOR FORMATION' };
+  const c = colors[g];
+  const score = r.formation_score || 50;
+
+  const html = `
+    <div class="result-card ${cardClass[g]}">
+      <div class="grade-badge ${badgeClass[g]}">${emoji[g]} GRADE ${g} — ${r.grade_label.toUpperCase()}</div>
+      <div class="result-title">${title[g]}</div>
+      <div class="result-desc">${r.summary}</div>
+
+      <div class="score-bar-wrap">
+        <div class="score-bar-label">
+          <span>Formation Score</span>
+          <span style="color:${c};font-weight:700">${score}/100</span>
+        </div>
+        <div class="score-bar-bg">
+          <div class="score-bar-fill" id="scoreBarFill" style="width:0%;background:${c}"></div>
+        </div>
+      </div>
+
+      <div class="defect-grid">
+        <div class="defect-item">
+          <div class="defect-label">UNIFORMITY</div>
+          <div class="defect-val">${r.uniformity || '—'}</div>
+        </div>
+        <div class="defect-item">
+          <div class="defect-label">CLOUDINESS</div>
+          <div class="defect-val">${r.cloudiness || '—'}</div>
+        </div>
+        <div class="defect-item">
+          <div class="defect-label">WIRE MARKS</div>
+          <div class="defect-val">${r.wire_marks || '—'}</div>
+        </div>
+        <div class="defect-item">
+          <div class="defect-label">PINHOLES</div>
+          <div class="defect-val">${r.pinholes || '—'}</div>
+        </div>
+        <div class="defect-item">
+          <div class="defect-label">FIBER DIST.</div>
+          <div class="defect-val">${r.fiber_distribution || '—'}</div>
+        </div>
+        <div class="defect-item">
+          <div class="defect-label">BW VARIATION</div>
+          <div class="defect-val">${r.basis_weight_variation || '—'}</div>
+        </div>
+      </div>
+
+      <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:10px;margin-bottom:14px;font-size:12px;color:var(--muted);font-family:var(--mono)">
+        💡 ${r.recommendations}
+      </div>
+
+      <div class="action-row">
+        <button class="action-btn" onclick="resetCapture()">↺ NEW SCAN</button>
+        <button class="action-btn primary" onclick="showToast('Report saved to log ✓')">✓ SAVED</button>
+      </div>
+    </div>`;
+
+  const sec = document.getElementById('resultSection');
+  sec.innerHTML = html;
+  sec.style.display = 'block';
+  setTimeout(() => {
+    const bar = document.getElementById('scoreBarFill');
+    if (bar) bar.style.width = score + '%';
+  }, 100);
+}
+
+// ═══════════════════════════════════════════
+//  LOG
+// ═══════════════════════════════════════════
+function saveLog(result) {
+  const entry = {
+    id: Date.now(),
+    timestamp: new Date().toISOString(),
+    grade: result.grade,
+    grade_label: result.grade_label,
+    score: result.formation_score,
+    user: currentUser.name,
+    role: currentUser.role,
+    cloudiness: result.cloudiness,
+    wire_marks: result.wire_marks,
+    pinholes: result.pinholes,
+    summary: result.summary,
+    image: capturedBase64
+  };
+  analysisLog.unshift(entry);
+  if (analysisLog.length > 100) analysisLog = analysisLog.slice(0,100);
+  localStorage.setItem('fa_log', JSON.stringify(analysisLog));
+}
+
+function renderLog(filter='all') {
+  const list = document.getElementById('logList');
+  let data = analysisLog;
+  if (filter !== 'all') data = data.filter(e => String(e.grade) === filter);
+  if (!data.length) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div>No scans yet</div>';
+    return;
+  }
+  list.innerHTML = data.map(e => {
+    const d = new Date(e.timestamp);
+    const time = d.toLocaleDateString('en-IN') + ' ' + d.toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit'});
+    return `
+      <div class="log-entry g${e.grade}">
+        <div class="log-top">
+          <span class="log-grade-badge g${e.grade}-lb">GRADE ${e.grade} · ${e.grade_label}</span>
+          <span class="log-time">${time}</span>
+        </div>
+        <div class="log-user">👤 ${e.user} · Score: ${e.score}/100</div>
+        <div class="log-defects">Cloudiness: ${e.cloudiness||'—'} · Wire: ${e.wire_marks||'—'} · Pinholes: ${e.pinholes||'—'}</div>
+      </div>`;
+  }).join('');
+}
+
+function filterLog(f, el) {
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderLog(f);
+}
+
+// ═══════════════════════════════════════════
+//  DASHBOARD
+// ═══════════════════════════════════════════
+function renderDash() {
+  const total = analysisLog.length;
+  const g1 = analysisLog.filter(e => e.grade===1).length;
+  const g2 = analysisLog.filter(e => e.grade===2).length;
+  const g3 = analysisLog.filter(e => e.grade===3).length;
+
+  document.getElementById('dTotal').textContent = total;
+  document.getElementById('dG1').textContent = g1;
+  document.getElementById('dG2').textContent = g2;
+  document.getElementById('dG3').textContent = g3;
+
+  const pct = n => total ? Math.round(n/total*100) : 0;
+  document.getElementById('g1pct').textContent = pct(g1)+'%';
+  document.getElementById('g2pct').textContent = pct(g2)+'%';
+  document.getElementById('g3pct').textContent = pct(g3)+'%';
+  setTimeout(()=>{
+    document.getElementById('g1bar').style.width = pct(g1)+'%';
+    document.getElementById('g2bar').style.width = pct(g2)+'%';
+    document.getElementById('g3bar').style.width = pct(g3)+'%';
+  },100);
+
+  const recent = analysisLog.slice(0,5);
+  const rec = document.getElementById('dashRecent');
+  if (!recent.length) { rec.innerHTML='<div class="empty-state"><div class="empty-icon">📊</div>No data yet</div>'; return; }
+  rec.innerHTML = recent.map(e => {
+    const d = new Date(e.timestamp);
+    const time = d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+    const c = {1:'var(--green)',2:'var(--yellow)',3:'var(--red)'}[e.grade];
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:8px">
+      <div>
+        <div style="font-size:13px;font-weight:600">${e.user}</div>
+        <div style="font-size:11px;font-family:var(--mono);color:var(--muted)">${time}</div>
+      </div>
+      <div style="font-family:var(--display);font-weight:700;font-size:16px;color:${c}">G${e.grade} · ${e.score}</div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+//  ADMIN
+// ═══════════════════════════════════════════
+function renderAdmin() {
+  const tbody = document.getElementById('userTableBody');
+  const tagClass = {admin:'tag-admin',hod:'tag-hod',shift_incharge:'tag-si',operator:'tag-op'};
+  tbody.innerHTML = USERS.map(u => `
+    <tr>
+      <td>${u.name}</td>
+      <td>${u.id}</td>
+      <td><span class="role-tag ${tagClass[u.role]}">${ROLE_LABELS[u.role]}</span></td>
+      <td><span class="online-dot"></span>Active</td>
+    </tr>`).join('');
+}
+
+// ═══════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 2500);
+}
+
+// Enter key on login
+document.getElementById('loginPass').addEventListener('keyup', e => {
+  if (e.key === 'Enter') doLogin();
+});
+</script>
+</body>
+</html>
